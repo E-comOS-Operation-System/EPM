@@ -22,6 +22,7 @@ EPM referenced the designs of DNF and APT, creating a set of very simple, fast, 
     list - list any software you can install
     fuck - Return to the previous version (without parameters, the system will revert to the previous version).
     hold - Freeze <a package>; prevent <a package> from upgrading.
+    unhold - Do the opposite of hold
 =======================================
 How to license
 ---------------------------------------
