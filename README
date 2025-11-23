@@ -12,17 +12,35 @@ Let's get down to business.
 How to use
 =======================================
 EPM referenced the designs of DNF and APT, creating a set of very simple, fast, and easy-to-remember commands:
-  Usage: epm <command> <parameters>
-  Example: epm update-list
-  Command:
-    update-list - Update the software list in the software repository.
-    upgrade - Upgrade your systems to latest version
-    upgrade - Fully upgraded to the latest version
-    install - install a package
-    list - list any software you can install
-    fuck - Return to the previous version (without parameters, the system will revert to the previous version).
-    hold - Freeze <a package>; prevent <a package> from upgrading.
-    unhold - Do the opposite of hold
+Usage: epm <command> [options] [arguments]
+Package Management Commands:
+  install <package...>          Install one or more packages
+  uninstall <package...>        Uninstall one or more packages
+  update <package...>           Update specified packages to latest version
+  upgrade                       Upgrade all installed packages
+  upgrade-full                  Perform a full system upgrade
+  hold <package...>             Prevent packages from being upgraded
+  unhold <package...>           Allow packages to be upgraded again
+  search <query>                Search for packages in repositories
+  info <package>                Show detailed information about a package
+  list                          List all available packages
+  pkg-status <package>          Show installation status of a package
+  update-list                   Update package source list
+  
+Repository Management Commands:
+  update-list                   Update local package index from repositories
+  add-remote <name> <url>       Add a new remote repository
+  rm-remote <name>              Remove an existing remote repository
+
+System Management Commands:
+  fuck                          Rollback system to previous version (or specified version)
+  status                        Show overall system and EPM status
+  upgrade-system                Upgrade operating system components
+
+Utility Commands:
+  help [command]                Show this help message or help for a specific command
+  version                       Show EPM version information
+    
 =======================================
 How to license
 ---------------------------------------
