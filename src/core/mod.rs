@@ -14,13 +14,8 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-
 */
-mod cli;
-mod core;
 
-fn main() -> anyhow::Result<()> {
-    let matches = cli::build_cli().get_matches();
-    cli::handle_command(&matches)
-}
+pub mod install;
+
+pub use install::{PackageInstaller, PackageMetadata, Certificate};
