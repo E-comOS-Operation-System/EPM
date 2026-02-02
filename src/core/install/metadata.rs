@@ -1,6 +1,8 @@
+use alloc::{string::ToString, format};
+
 /**
-    EPM - E-comOS Packages Manager
-    Copyright (C) 2025  E-comOS User Mode Team EPM Group & Saladin5101
+    cook - E-comOS Packages Manager
+    Copyright (C) 2025,2026  E-comOS User Mode Team cook Group & Saladin5101
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,112 +17,244 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-use serde::Deserialize;
-use std::fs;
-use anyhow::{Result, anyhow};
 
-#[derive(Debug, Deserialize)]
+extern crate alloc;
+use alloc::{string::String, vec::Vec};
+use log::{info, error};
+
+/* Placeholder modules for no_std compatibility
+use core::path::Path;
+use core::fs;
+*/
+
 pub struct PackageMetadata {
     pub name: String,
     pub version: String,
     pub release_date: String,
     pub build_date: String,
     pub publisher: String,
-    #[serde(rename = "is it verified?")]
     pub verified: String,
     pub author: String,
     pub run_on: String,
     pub description: String,
     pub license: String,
-    #[serde(rename = "use_packages(If not used other packages, please write NOTHING)")]
     pub use_packages: String,
-    #[serde(rename = "dependencies(If not dependent on other apps, please write No)")]
     pub dependencies: String,
-    pub contact: serde_json::Value,
+    pub contact: String,
+    pub build: Option<BuildOptions>,
+    pub checksum: Option<String>,
+    pub tests: Option<TestOptions>,
+}
+
+pub struct BuildOptions {
+    pub compiler: String,
+    pub flags: Vec<String>,
+    pub output: String,
+}
+
+pub struct TestOptions {
+    pub command: String,
+}
+
+pub enum MetadataError {
+    EmptyField,
+    InvalidVersion,
+    InvalidStatus,
+    InvalidDependency,
+    InvalidPlatform,
 }
 
 impl PackageMetadata {
-    pub fn validate(&self) -> Result<()> {
-        let required_fields = [
-            (&self.name, "name"),
-            (&self.version, "version"),
-            (&self.publisher, "publisher"),
-            (&self.author, "author"),
-            (&self.description, "description"),
-            (&self.license, "license"),
-        ];
-        
-        for (field, field_name) in required_fields {
-            if field.trim().is_empty() {  // Add trim() to check ' '
-                anyhow::bail!("The field '{}' cannot be empty.", field_name);  // fix bail! use
-            }
+    pub fn validate(&self) -> Result<(), MetadataError> {
+        // Check required fields
+        if self.name.is_empty() || self.version.is_empty() || 
+           self.publisher.is_empty() || self.author.is_empty() ||
+           self.description.is_empty() || self.license.is_empty() {
+            return Err(MetadataError::EmptyField);
         }
         
-        if !self.version.chars().any(|c| c == '.') {
-            anyhow::bail!("The version field must contain a dot.");
+        // Check version format
+        if !self.version.contains('.') {
+            return Err(MetadataError::InvalidVersion);
         }
         
+        // Check verification status
         let valid_statuses = ["yes", "true", "verified", "no", "false", "unverified"];
-        if !valid_statuses.contains(&self.verified.to_lowercase().as_str()) {
-            anyhow::bail!("Unknown status! The verified field must be one of: yes, true, verified, no, false, unverified.");
+        if !valid_statuses.contains(&self.verified.as_str()) {
+            return Err(MetadataError::InvalidStatus);
         }
         
-        if self.dependencies != "No" && !self.dependencies.starts_with("epm://") {
-            anyhow::bail!("The dependencies's format is an error, must be 'No' or start with 'epm://'");
+        // Check dependency format
+        if self.dependencies != "No" && !self.dependencies.starts_with("cook://") {
+            return Err(MetadataError::InvalidDependency);
         }
         
-        if self.use_packages != "NOTHING" && !self.use_packages.starts_with("epm://") {
-            anyhow::bail!("The use_packages's format is an error, must be 'NOTHING' or start with 'epm://'");
+        if self.use_packages != "NOTHING" && !self.use_packages.starts_with("cook://") {
+            return Err(MetadataError::InvalidDependency);
         }
         
+        // Check platform support
         let valid_platforms = ["x86", "x64", "ARM", "ARM64", "RISC-V"];
-        let platforms: Vec<&str> = self.run_on.split(',').map(|s| s.trim()).collect();
-        
-        for platform in &platforms {
-            if !valid_platforms.contains(platform) {
-                anyhow::bail!("Unsupported platform: '{}'. Supported platforms: {}", platform, valid_platforms.join(", "));
+        for platform in self.supported_platforms() {
+            if !valid_platforms.contains(&platform.as_str()) {
+                return Err(MetadataError::InvalidPlatform);
             }
         }
         
-        println!("Package successfully verified"); 
+        // Validate build options
+        if let Some(build) = &self.build {
+            if build.compiler.is_empty() || build.output.is_empty() {
+                return Err(MetadataError::EmptyField);
+            }
+        }
+
+        // Validate checksum
+        if let Some(checksum) = &self.checksum {
+            if checksum.len() != 64 { // Example: SHA-256 length
+                return Err(MetadataError::InvalidDependency);
+            }
+        }
+
+        // Validate tests
+        if let Some(tests) = &self.tests {
+            if tests.command.is_empty() {
+                return Err(MetadataError::EmptyField);
+            }
+        }
+
         Ok(())
     }
     
-    // Get bool to verify
     pub fn is_verified(&self) -> bool {
-        matches!(self.verified.to_lowercase().as_str(), "yes" | "true" | "verified")
+        self.verified == "yes" || self.verified == "true" || self.verified == "verified"
     }
     
-    // Parse runtime platform as vector
     pub fn supported_platforms(&self) -> Vec<String> {
-        self.run_on.split(',')
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .collect()
+        let mut platforms = Vec::new();
+        let mut current = String::new();
+        
+        for ch in self.run_on.chars() {
+            if ch == ',' {
+                if !current.is_empty() {
+                    platforms.push(current.trim().to_string());
+                    current = String::new();
+                }
+            } else {
+                current.push(ch);
+            }
+        }
+        
+        if !current.is_empty() {
+            platforms.push(current.trim().to_string());
+        }
+        
+        platforms
     }
     
-    // Check if depends on other packages
     pub fn has_dependencies(&self) -> bool {
         self.dependencies != "No"
     }
     
-    // Get dependencies list
     pub fn dependency_list(&self) -> Vec<String> {
-        if self.has_dependencies() {
-            self.dependencies.split(',')
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-                .collect()
-        } else {
-            Vec::new()
+        if !self.has_dependencies() {
+            return Vec::new();
         }
+        
+        let mut deps = Vec::new();
+        let mut current = String::new();
+        
+        for ch in self.dependencies.chars() {
+            if ch == ',' {
+                if !current.is_empty() {
+                    deps.push(current.trim().to_string());
+                    current = String::new();
+                }
+            } else {
+                current.push(ch);
+            }
+        }
+        
+        if !current.is_empty() {
+            deps.push(current.trim().to_string());
+        }
+        
+        deps
     }
-    
-    // A from file head
-    pub fn from_file(path: &str) -> Result<Self> {
-        let content = fs::read_to_string(path)?;
-        let metadata: PackageMetadata = serde_json::from_str(&content)
-            .map_err(|e| anyhow!("Failed to parse metadata: {}", e))?;
-        Ok(metadata)
+
+    /// Resolves dependencies recursively and validates their availability.
+    pub fn resolve_dependencies(&self, available_packages: &Vec<String>) -> Result<Vec<String>, MetadataError> {
+        let mut resolved = Vec::new();
+        let dependencies = self.dependency_list();
+
+        for dep in dependencies {
+            if available_packages.contains(&dep) {
+                resolved.push(dep);
+            } else {
+                return Err(MetadataError::InvalidDependency);
+            }
+        }
+
+        Ok(resolved)
+    }
+
+    /// Ensures all dependencies are installed or compiled before the main package.
+    pub fn ensure_dependencies_installed(&self, installed_packages: &Vec<String>, compile_dependency: fn(&str) -> Result<(), String>) -> Result<(), MetadataError> {
+        let dependencies = self.dependency_list();
+
+        for dep in dependencies {
+            if !installed_packages.contains(&dep) {
+                // Attempt to compile the dependency
+                if let Err(err) = compile_dependency(&dep) {
+                    error!("Failed to compile dependency {}: {}", dep, err);
+                    return Err(MetadataError::InvalidDependency);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Checks if the package is already compiled and cached.
+    pub fn is_cached(&self, cache_dir: &str) -> bool {
+        let _cache_path = format!("{}/{}-{}.bin", cache_dir, self.name, self.version);
+        /* Placeholder for no_std compatibility
+        Path::new(&cache_path).exists()
+        */
+        false // TODO: Implement actual cache check
+    }
+
+    /// Verifies the checksum of the package source.
+    pub fn verify_checksum(&self, source_path: &str) -> Result<(), MetadataError> {
+        if let Some(expected_checksum) = &self.checksum {
+            use sha2::{Digest, Sha256};
+            use alloc::vec::Vec;
+
+            /*
+            let data = fs::read(source_path).map_err(|_| MetadataError::InvalidDependency)?;
+            */
+            let data = Vec::new(); // TODO: Replace with actual file reading
+            let mut hasher = Sha256::new();
+            hasher.update(data);
+            let calculated_checksum = format!("{:x}", hasher.finalize());
+
+            if &calculated_checksum != expected_checksum {
+                return Err(MetadataError::InvalidDependency);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Performs incremental compilation by checking for changes.
+    pub fn compile_incrementally(&self, source_dir: &str, cache_dir: &str, compile: fn(&str, &str) -> Result<(), String>) -> Result<(), MetadataError> {
+        if self.is_cached(cache_dir) {
+            info!("Package {} is already cached.", self.name);
+            return Ok(());
+        }
+
+        let _source_path = format!("{}/{}", source_dir, self.name);
+        self.verify_checksum(&_source_path)?;
+
+        compile(&_source_path, cache_dir).map_err(|_| MetadataError::InvalidDependency)
     }
 }

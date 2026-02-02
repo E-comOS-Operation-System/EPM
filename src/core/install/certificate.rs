@@ -1,6 +1,6 @@
 /**
-    EPM - E-comOS Packages Manager
-    Copyright (C) 2025  E-comOS User Mode Team EPM Group & Saladin5101
+    cook - E-comOS Packages Manager
+    Copyright (C) 2025,2026  E-comOS User Mode Team cook Group & Saladin5101
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,8 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
-#![no_std]
 
 extern crate alloc;
 use alloc::{string::String, vec::Vec};

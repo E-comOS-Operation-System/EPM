@@ -1,6 +1,6 @@
 /**
-    EPM - E-comOS Packages Manager
-    Copyright (C) 2025  E-comOS User Mode Team EPM Group & Saladin5101
+    Cook - E-comOS Packages Manager
+    Copyright (C) 2025  E-comOS User Mode Team Cook Group & Saladin5101
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,57 +14,81 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-
 */
-use clap::{Arg, Command};
-use colored::*;
 
-fn main() -> anyhow::Result<()> {
-    let matches = Command::new("epm")
-        .version("0.1.0")
-        .about("E-comOS Package Manager")
-        .author("E-comOS Team")
-        .subcommand(
-            Command::new("install")
-                .about("Install a package")
-                .arg(Arg::new("package_name").required(true)),
-        )
-        .subcommand(
-            Command::new("uninstall")
-                .about("Remove a package")
-                .arg(Arg::new("package_name").required(true)),
-        )
-        .subcommand(
-            Command::new("update")
-                .about("Update a package")
-                .arg(Arg::new("package_name").required(true)),
-        )
-        .get_matches();
+extern crate alloc;
+use alloc::{string::String, vec::Vec};
 
-    match matches.subcommand() {
-        Some(("install", sub_matches)) => {
-            let package_name = sub_matches.get_one::<String>("package_name").unwrap();
-            println!("{} installing '{}'...", ":>".green(), package_name.blue());
-            // TODO: Use install
-            println!("{} package '{}' installed！", ":)".green(), package_name.blue());
+mod core;
+use core::cook::CookManager;
+
+fn main() {
+    let args = get_args();
+    
+    if args.len() < 2 {
+        return;
+    }
+    
+    let command = &args[1];
+    
+    match command.as_str() {
+        "install" => {
+            if args.len() < 3 {
+                return;
+            }
+            let package_name = &args[2];
+            install_package(package_name);
         }
-        Some(("uninstall", sub_matches)) => {
-            let package_name = sub_matches.get_one::<String>("package_name").unwrap();
-            println!("{} Uninstalling '{}'...", ":>".yellow(), package_name.blue());
-            // TODO: Use uninstall
-            println!("{} package '{}' uninstalled！", ":)".green(), package_name.blue());
+        "uninstall" => {
+            if args.len() < 3 {
+                return;
+            }
+            let package_name = &args[2];
+            uninstall_package(package_name);
         }
-        Some(("update", sub_matches)) => {
-            let package_name = sub_matches.get_one::<String>("package_name").unwrap();
-            println!("{} Updating '{}'...", ":>".cyan(), package_name.blue());
-            // TODO: Use update
-            println!("{} package '{}' updated！", ":)".green(), package_name.blue());
+        "update" => {
+            if args.len() < 3 {
+                return;
+            }
+            let package_name = &args[2];
+            update_package(package_name);
         }
         _ => {
-            println!("{} 用法: epm <install|uninstall|update> <包名>", ":)".green());
+            return;
         }
     }
-
-    Ok(())
 }
+
+
+fn get_args() -> Vec<String> {
+    let mut args = Vec::new();
+    args.push(String::from("cook"));
+    args.push(String::from("install"));
+    args.push(String::from("test-package"));
+    args
+}
+
+fn install_package(package_name: &str) {
+    let mut manager = CookManager::new(
+        String::from("/tmp/cook/work"),
+        String::from("/usr/local")
+    );
+    
+    // Add default recipe sources
+    manager.add_recipe_source(String::from("https://github.com/E-comOS-Operation-System/recipes.git"));
+    
+    match manager.cook_package(package_name) {
+        Ok(_) => {},
+        Err(_) => {},
+    }
+}
+
+fn uninstall_package(_package_name: &str) {
+    // TODO: Implement uninstall for cooked packages
+}
+
+fn update_package(package_name: &str) {
+    // Update is re-cook with latest recipe
+    install_package(package_name);
+}
+
