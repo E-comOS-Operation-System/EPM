@@ -59,7 +59,6 @@ fn main() {
     }
 }
 
-
 fn get_args() -> Vec<String> {
     let mut args = Vec::new();
     args.push(String::from("cook"));
@@ -75,7 +74,7 @@ fn install_package(package_name: &str) {
     );
     
     // Add default recipe sources
-    manager.add_recipe_source(String::from("https://github.com/E-comOS-Operation-System/recipes.git"));
+    manager.add_recipe_source(String::from("https://recipes.ecomos.org"));
     
     match manager.cook_package(package_name) {
         Ok(_) => {},
@@ -91,4 +90,3 @@ fn update_package(package_name: &str) {
     // Update is re-cook with latest recipe
     install_package(package_name);
 }
-

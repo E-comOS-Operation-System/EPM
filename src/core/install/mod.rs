@@ -1,6 +1,6 @@
 /**
-    cook - E-comOS Packages Manager
-    Copyright (C) 2025,2026  E-comOS User Mode Team cook Group & Saladin5101
+    Cook - E-comOS Packages Manager
+    Copyright (C) 2025  E-comOS User Mode Team Cook Group & Saladin5101
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,4 +1,4 @@
-cook - E-comOS Package Manager
+Cook - E-comOS Package Manager
 =======================================
 Welcome!
 LadinOS was an nascent Linux distribution that nearly failed.Developed and released by the LadinOS Operation Team, and still in pre-release status, it was actually created as preparation for the E-comOS operating system project. We learned a lot from its failure, one of the most valuable lessons being the ALS package manager.
@@ -6,12 +6,12 @@ Users of any operating system need to download software; relying solely on the s
 So how exactly do users download software? Should we learn from Windows? Their (Microsoft's) "foolproof installers" are indeed appealing, but they're confusing—should we use modern UWP or Win32—which is an EXE file, of course? And why is there an installer format called EXE and another called MSI? Besides, EXE wasn't originally intended for installers! What's the difference between EXE and MSI? I might just want to install Visual Studio.
 Instead of creating this mess, we should directly learn Linux's package management system. It's simpler, faster, and more secure, as packages are officially or community certified and generally won't cause major problems.
 As we said, we need to develop our own package manager. Is it difficult? No, in modern times, there are many ways to achieve this.
-cook is the foundation for RUI MALL's operation and system updates. Therefore, under normal circumstances, as a core user-space component, it is neither allowed nor permitted to be deleted. If you want to switch to a different package manager, well... it seems there really isn't a replacement (of course, you can fork this repository and modify it a bit).
+Cook is the foundation for RUI MALL's operation and system updates. Therefore, under normal circumstances, as a core user-space component, it is neither allowed nor permitted to be deleted. If you want to switch to a different package manager, well... it seems there really isn't a replacement (of course, you can fork this repository and modify it a bit).
 Let's get down to business.
 =======================================
 How to use
 =======================================
-cook referenced the designs of DNF and APT, creating a set of very simple, fast, and easy-to-remember commands:
+Cook referenced the designs of DNF and APT, creating a set of very simple, fast, and easy-to-remember commands:
 Usage: cook <command> [options] [arguments]
 Package Management Commands:
   install <package...>          Install one or more packages
